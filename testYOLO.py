@@ -85,51 +85,39 @@ def detect_people_yolo(video_path, yolo_cfg, yolo_weights, coco_names):
             else:
                 current_ids[i] = best_id
 
-        # Adiciona IDs de pessoas aos quadros anteriores
-        prev_boxes = current_boxes
-        prev_ids = current_ids
-
-        for i in range(len(current_boxes):
+        for i in range(len(current_boxes)):
             x, y, w, h = current_boxes[i]
             center = get_center(current_boxes[i])
             person_id = current_ids[i]
 
             if person_id not in prev_centers:
-                prev_centers[person_id] = []
+                prev_centers[person_id] = center
+                continue
 
-            prev_centers[person_id].append(center)
+            if prev_centers[person_id][1] < 300 <= center[1] and person_id not in down_ids:
+                down += 1
+                down_ids.add(person_id)
+            elif prev_centers[person_id][1] > 300 >= center[1] and person_id not in up_ids:
+                up += 1
+                up_ids.add(person_id)
 
-            if len(prev_centers[person_id]) > 4:
-                prev_centers[person_id].pop(0)
-
-            if len(prev_centers[person_id]) > 2:
-                move_up = True
-                move_down = True
-
-                for j in range(1, len(prev_centers[person_id])):
-                    if prev_centers[person_id][j][1] > prev_centers[person_id][j - 1][1]:
-                        move_up = False
-                    if prev_centers[person_id][j][1] < prev_centers[person_id][j - 1][1]:
-                        move_down = False
-
-                if move_up and person_id not in up_ids:
-                    up += 1
-                    up_ids.add(person_id)
-                elif move_down and person_id not in down_ids:
-                    down += 1
-                    down_ids.add(person_id)
+            prev_centers[person_id] = center
 
             label = f"Person {person_id}"
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            cv2.circle(frame, (int(center[0]), int(center[1]), 2, (255, 255, 0), -2)
+            cv2.circle(frame, (int(center[0]), int(center[1])), 2, (255, 255, 0), -2)
 
         cv2.line(frame, (0, 300), (frame.shape[1], 300), (0, 0, 255), 1)
+
         cv2.imshow("YOLO People Detection", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+        prev_boxes = current_boxes
+        prev_ids = current_ids
+        print(up_ids, down_ids)
         frame_id += 1
 
     cap.release()
@@ -138,10 +126,9 @@ def detect_people_yolo(video_path, yolo_cfg, yolo_weights, coco_names):
     print(f"Pessoas que se moveram para baixo: {down}")
     print(f"Pessoas que se moveram para cima: {up}")
 
+
 video_path = 'C:\contadorPessoas\video_cortado.mp4'
-
 yolo_cfg = 'C:\contadorPessoas\1 - testeBiblios\YOLOtest\yolov3.cfg'
-yolo_weights= 'C:\contadorPessoas\1 - testeBiblios\YOLOtest\yolov3.weights'
-coco_names = = 'C:\contadorPessoas\1 - testeBiblios\YOLOtest\coco.names'
-
+yolo_weights = 'C:\contadorPessoas\1 - testeBiblios\YOLOtest\yolov3.weights'
+coco_names = 'C:\contadorPessoas\1 - testeBiblios\YOLOtest\coco.names'
 detect_people_yolo(video_path, yolo_cfg, yolo_weights, coco_names)
